@@ -1,0 +1,21 @@
+# Python bytecode & caching
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Temporary session uploads (preserve folders)
+uploads/temp_*.jpg
+
+# Operating system & editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

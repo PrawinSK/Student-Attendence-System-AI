@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Attendance | Classroom Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 24px; }
+    .header h1 { font-size: 24px; color: #38bdf8; margin: 0; }
+    .nav-btns a { color: #f8fafc; background: #1e293b; padding: 8px 16px; border-radius: 8px; text-decoration: none; margin-left: 10px; font-size: 14px; border: 1px solid #334155; }
+    .nav-btns a:hover { background: #334155; }
+    .grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px; }
+    .card { background: #1e293b; border-radius: 14px; padding: 24px; border: 1px solid #334155; }
+    .card h2 { margin-top: 0; color: #60a5fa; font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 5px; font-size: 13px; color: #94a3b8; }
+    input, select { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; }
+    input:focus, select:focus { outline: none; border-color: #38bdf8; }
+    button.btn-primary { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; margin-top: 10px; transition: background 0.2s; }
+    button.btn-primary:hover { background: #1d4ed8; }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .status-Present { background: #065f46; color: #34d399; }
+    .status-Absent { background: #7f1d1d; color: #f87171; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; font-weight: 600; }
+    .stats-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .stat-pill { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; flex: 1; text-align: center; }
+    .stat-val { font-size: 20px; font-weight: bold; color: #38bdf8; }
+    .stat-lbl { font-size: 12px; color: #94a3b8; }
+    .switch-btn { cursor: pointer; padding: 4px 8px; border-radius: 6px; font-size: 12px; border: none; }
+    
+    /* Annotated Photo Preview */
+    .annotated-box { margin-top: 15px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px; text-align: center; }
+    .annotated-box img { max-width: 100%; max-height: 280px; border-radius: 6px; border: 1px solid #475569; object-fit: contain; cursor: pointer; }
+    .annotated-legend { display: flex; justify-content: center; gap: 15px; margin-top: 8px; font-size: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-color { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+    /* Unknown Faces Section */
+    .unknown-section { margin-top: 24px; background: #1e1b4b; border: 1px solid #6366f1; border-radius: 12px; padding: 18px; }
+    .unknown-section-title { font-size: 16px; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 8px; margin-top: 0; margin-bottom: 12px; }
+    .unknown-card { background: #0f172a; border: 1px solid #3730a3; border-radius: 10px; padding: 14px; margin-bottom: 14px; display: flex; gap: 16px; align-items: flex-start; }
+    .unknown-img { width: 84px; height: 84px; border-radius: 10px; object-fit: cover; border: 2px solid #ef4444; flex-shrink: 0; background: #1e293b; }
+    .unknown-content { flex: 1; }
+    .unknown-tag { display: inline-block; background: #7f1d1d; color: #fca5a5; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-bottom: 8px; }
+    .action-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .action-tab-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 500; }
+    .action-tab-btn.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; font-weight: 700; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .input-row input { flex: 1; padding: 8px 10px; font-size: 13px; }
+    .btn-action-small { padding: 8px 12px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-match { background: #2563eb; color: #fff; }
+    .btn-match:hover { background: #1d4ed8; }
+    .btn-enroll { background: #059669; color: #fff; }
+    .btn-enroll:hover { background: #047857; }
+    .btn-stranger { background: #dc2626; color: #fff; }
+    .btn-stranger:hover { background: #b91c1c; }
+    .resolved-alert { padding: 10px; border-radius: 8px; background: #064e3b; color: #a7f3d0; font-size: 13px; font-weight: 500; }
+    .stranger-alert { padding: 10px; border-radius: 8px; background: #450a0a; color: #fca5a5; font-size: 13px; font-weight: 500; }
+
+    /* Modal for Image Zoom */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+    .modal.show { display: flex; }
+    .modal-content { max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid #38bdf8; }
+    .modal-close { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 32px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AI-Based Smart Attendance System</h1>
+    <div class="nav-btns">
+      <a href="/add_student">+ Register Student</a>
+      <a href="/hod_dashboard">HOD Analytics</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Class Photo Upload & Recognition -->
+    <div class="card">
+      <h2>Step 1: Capture / Upload Class Photo</h2>
+      <form id="attendanceForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label>Department</label>
+          <select id="department" name="department" required>
+            <option value="CS">Computer Science (CS)</option>
+            <option value="IT" selected>Information Technology (IT)</option>
+            <option value="EEE">Electrical (EEE)</option>
+            <option value="MECH">Mechanical (MECH)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Academic Year</label>
+          <select id="year" name="year" required>
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4" selected>Year 4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="subject" name="subject" value="Data Structures" required>
+        </div>
+        <div class="form-group">
+          <label>Period</label>
+          <select id="period" name="period" required>
+            <option value="1">Period 1</option>
+            <option value="2">Period 2</option>
+            <option value="3" selected>Period 3</option>
+            <option value="4">Period 4</option>
+            <option value="5">Period 5</option>
+            <option value="6">Period 6</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Classroom Group Photo</label>
+          <input type="file" id="imageInput" name="image" accept="image/*" required>
+        </div>
+        <button type="button" id="recognizeBtn" class="btn-primary" onclick="processAttendance()">Process AI Recognition</button>
+      </form>
+
+      <!-- Annotated Photo Preview Box -->
+      <div id="annotatedBox" class="annotated-box" style="display:none;">
+        <label style="font-weight:600; color:#38bdf8; margin-bottom:6px;">AI Facial Detection Overlay</label>
+        <img id="annotatedImg" src="" alt="Marked Class Photo" onclick="openModal(this.src)" title="Click to view full image">
+        <div class="annotated-legend">
+          <div class="legend-item"><span class="legend-color" style="background:#2ecc71;"></span> Green: Recognized Student</div>
+          <div class="legend-item"><span class="legend-color" style="background:#e74c3c;"></span> Red: Unknown Individual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recognition Result & Unknown Person Review Console -->
+    <div class="card">
+      <h2>Step 2: AI Verification & Manual Review</h2>
+      <div id="statsRow" class="stats-row" style="display:none;">
+        <div class="stat-pill"><div id="cntPresent" class="stat-val">0</div><div class="stat-lbl">Present</div></div>
+        <div class="stat-pill"><div id="cntAbsent" class="stat-val">0</div><div class="stat-lbl">Absent</div></div>
+        <div class="stat-pill"><div id="cntUnknown" class="stat-val" style="color:#f87171;">0</div><div class="stat-lbl">Unknown Faces</div></div>
+      </div>
+
+      <div id="statusMessage" style="color: #94a3b8; font-size: 14px;">Select class parameters and upload a classroom photo to begin.</div>
+
+      <!-- Unknown Persons Resolution Panel -->
+      <div id="unknownContainer" class="unknown-section" style="display:none;">
+        <h3 class="unknown-section-title">
+          <span>⚠️ Unknown Person(s) Detected</span>
+          <span id="unknownBadge" style="background:#4338ca; color:#e0e7ff; font-size:12px; padding:2px 8px; border-radius:999px;">0 Action Required</span>
+        </h3>
+        <p style="font-size:12px; color:#c7d2fe; margin-top:0; margin-bottom:14px;">
+          For each unidentified person: enter their Roll Number to match & auto-train their face into the model, add them as a new student, or flag them as a stranger.
+        </p>
+        <div id="unknownList"></div>
+      </div>
+
+      <!-- Students Attendance Table -->
+      <div id="resultsTableContainer" style="display:none;">
+        <label style="font-weight:600; color:#94a3b8; margin-top:10px; display:block;">Class Attendance Roster</label>
+        <table>
+          <thead>
+            <tr>
+              <th>Reg No</th>
+              <th>Student Name</th>
+              <th>Status</th>
+              <th>Toggle</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+        <div style="display:flex; gap:12px; margin-top:20px;">
+          <button type="button" class="btn-primary" style="background:#059669; flex:1.2; margin-top:0;" onclick="confirmSaveAttendance()">💾 Save Final Attendance to Database</button>
+          <button type="button" class="btn-primary" style="background:#0284c7; flex:1; margin-top:0;" onclick="downloadAttendanceExcel()">📥 Download Excel (.xlsx)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Modal -->
+  <div id="imgModal" class="modal" onclick="closeModal()">
+    <span class="modal-close">&times;</span>
+    <img id="modalImg" class="modal-content" src="" alt="Zoomed View">
+  </div>
+
+  <script>
+    let recognizedStudents = [];
+    let detectedUnknownFaces = [];
+
+    function openModal(src) {
+      document.getElementById('modalImg').src = src;
+      document.getElementById('imgModal').classList.add('show');
+    }
+    function closeModal() {
+      document.getElementById('imgModal').classList.remove('show');
+    }
+
+    async function processAttendance() {
+      const fileInput = document.getElementById('imageInput');
+      if (!fileInput.files[0]) {
+        alert('Please choose a class image.');
+        return;
+      }
+      const btn = document.getElementById('recognizeBtn');
+      btn.innerText = 'Detecting & Recognizing Faces...';
+      btn.disabled = true;
+
+      const fd = new FormData();
+      fd.append('image', fileInput.files[0]);
+      fd.append('department', document.getElementById('department').value);
+      fd.append('year', document.getElementById('year').value);
+      fd.append('subject', document.getElementById('subject').value);
+      fd.append('period', document.getElementById('period').value);
+
+      try {
+        const resp = await fetch('/mark_attendance', { method: 'POST', body: fd });
+        const data = await resp.json();
+        btn.innerText = 'Process AI Recognition';
+        btn.disabled = false;
+
+        if (data.status === 'success') {
+          recognizedStudents = data.students || [];
+          detectedUnknownFaces = data.unknown_faces || [];
+          
+          document.getElementById('cntUnknown').innerText = data.unknown_count;
+          
+          // Show Annotated Image Overlay
+          if (data.annotated_image) {
+            document.getElementById('annotatedImg').src = data.annotated_image;
+            document.getElementById('annotatedBox').style.display = 'block';
+          }
+
+          renderResults();
+          renderUnknownFaces();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        btn.innerText = 'Process AI Recognition';
+        btn.disabled = false;
+        alert('Failed to process image: ' + err);
+      }
+    }
+
+    function renderResults() {
+      // Ensure strictly unique students by register_number
+      const uniqueMap = new Map();
+      recognizedStudents.forEach(st => {
+        const key = String(st.register_number || st.id);
+        if (!uniqueMap.has(key) || st.status === 'Present') {
+          uniqueMap.set(key, st);
+        }
+      });
+      recognizedStudents = Array.from(uniqueMap.values());
+
+      const tbody = document.getElementById('resultsBody');
+      tbody.innerHTML = '';
+      let pCount = 0;
+      let aCount = 0;
+
+      recognizedStudents.forEach((st, idx) => {
+        if (st.status === 'Present') pCount++; else aCount++;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${st.register_number}</td>
+          <td><b>${st.name}</b></td>
+          <td><span class="status-badge status-${st.status}">${st.status}</span></td>
+          <td>
+            <button class="switch-btn" style="background:${st.status === 'Present' ? '#ef4444' : '#10b981'}; color:#fff;" onclick="toggleStatus(${idx})">
+              Mark ${st.status === 'Present' ? 'Absent' : 'Present'}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById('cntPresent').innerText = pCount;
+      document.getElementById('cntAbsent').innerText = aCount;
+      document.getElementById('statsRow').style.display = 'flex';
+      document.getElementById('resultsTableContainer').style.display = 'block';
+      document.getElementById('statusMessage').style.display = 'none';
+    }
+
+    function toggleStatus(index) {
+      recognizedStudents[index].status = recognizedStudents[index].status === 'Present' ? 'Absent' : 'Present';
+      renderResults();
+    }
+
+    function renderUnknownFaces() {
+      const container = document.getElementById('unknownContainer');
+      const list = document.getElementById('unknownList');
+      const badge = document.getElementById('unknownBadge');
+
+      const pendingCount = detectedUnknownFaces.filter(u => u.status === 'pending').length;
+      badge.innerText = `${pendingCount} Pending Action`;
+
+      if (detectedUnknownFaces.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+      list.innerHTML = '';
+
+      detectedUnknownFaces.forEach((unk, idx) => {
+        const card = document.createElement('div');
+        card.className = 'unknown-card';
+        card.id = `unk-card-${unk.id}`;
+
+        if (unk.status === 'resolved') {
+          card.innerHTML = `
+            <img src="${unk.crop_url}" class="unknown-img" style="border-color:#10b981;">
+            <div class="unknown-content">
+              <div class="resolved-alert">
+                ✓ <b>Resolved:</b> Face linked to <b>${unk.resolved_name || 'Enrolled Student'}</b> (${unk.resolved_reg || ''}). Model auto-trained and attendance marked Present!
+              </div>
+            </div>
+          `;
+        } else if (unk.status === 'stranger') {
+          card.innerHTML = `
+            <img src="${unk.crop_url}" class="unknown-img" style="border-color:#ef4444;">
+            <div class="unknown-content">
+              <div class="stranger-alert">
+                🚫 <b>Marked as Stranger / Visitor:</b> Documented in security logs.
+              </div>
+            </div>
+          `;
+        } else {
+          // Pending status - interactive controls
+          card.innerHTML = `
+            <img src="${unk.crop_url}" class="unknown-img" title="Cropped Face from Classroom Photo">
+            <div class="unknown-content">
+              <div class="unknown-tag">${unk.label || `Unknown #${idx+1}`}</div>
+              <div class="action-tabs">
+                <button class="action-tab-btn active" onclick="switchTab(${unk.id}, 'match')">Match Existing Roll No</button>
+                <button class="action-tab-btn" onclick="switchTab(${unk.id}, 'enroll')">Add as New Student</button>
+                <button class="action-tab-btn" onclick="switchTab(${unk.id}, 'stranger')">Mark Stranger</button>
+              </div>
+
+              <!-- Tab 1: Match Existing Student -->
+              <div id="tab-match-${unk.id}" class="tab-panel active">
+                <div class="input-row">
+                  <input type="text" id="reg-input-${unk.id}" placeholder="Enter Roll / Register Number">
+                  <button class="btn-action-small btn-match" onclick="checkAndMatchStudent(${unk.id})">Verify & Link Face</button>
+                </div>
+                <div id="match-feedback-${unk.id}" style="font-size:12px; margin-top:4px;"></div>
+              </div>
+
+              <!-- Tab 2: Add New Student -->
+              <div id="tab-enroll-${unk.id}" class="tab-panel">
+                <div class="input-row">
+                  <input type="text" id="new-name-${unk.id}" placeholder="Full Name">
+                  <input type="text" id="new-reg-${unk.id}" placeholder="Roll / Reg No">
+                </div>
+                <div class="input-row">
+                  <select id="new-dept-${unk.id}">
+                    <option value="CS" ${document.getElementById('department').value === 'CS' ? 'selected':''}>CS</option>
+                    <option value="IT" ${document.getElementById('department').value === 'IT' ? 'selected':''}>IT</option>
+                    <option value="EEE" ${document.getElementById('department').value === 'EEE' ? 'selected':''}>EEE</option>
+                    <option value="MECH" ${document.getElementById('department').value === 'MECH' ? 'selected':''}>MECH</option>
+                  </select>
+                  <select id="new-year-${unk.id}">
+                    <option value="1" ${document.getElementById('year').value === '1' ? 'selected':''}>Year 1</option>
+                    <option value="2" ${document.getElementById('year').value === '2' ? 'selected':''}>Year 2</option>
+                    <option value="3" ${document.getElementById('year').value === '3' ? 'selected':''}>Year 3</option>
+                    <option value="4" ${document.getElementById('year').value === '4' ? 'selected':''}>Year 4</option>
+                  </select>
+                  <button class="btn-action-small btn-enroll" onclick="addNewStudentFromFace(${unk.id})">+ Register & Train</button>
+                </div>
+              </div>
+
+              <!-- Tab 3: Mark Stranger -->
+              <div id="tab-stranger-${unk.id}" class="tab-panel">
+                <div class="input-row">
+                  <input type="text" id="stranger-notes-${unk.id}" placeholder="Optional notes (e.g. Visitor, Guest, Non-student)">
+                  <button class="btn-action-small btn-stranger" onclick="markAsStranger(${unk.id})">🚫 Mark as Stranger</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        list.appendChild(card);
+      });
+    }
+
+    function switchTab(unkId, tabType) {
+      const card = document.getElementById(`unk-card-${unkId}`);
+      if (!card) return;
+      const buttons = card.querySelectorAll('.action-tab-btn');
+      buttons.forEach(b => b.classList.remove('active'));
+      const tabs = card.querySelectorAll('.tab-panel');
+      tabs.forEach(t => t.classList.remove('active'));
+
+      if (tabType === 'match') {
+        buttons[0].classList.add('active');
+        document.getElementById(`tab-match-${unkId}`).classList.add('active');
+      } else if (tabType === 'enroll') {
+        buttons[1].classList.add('active');
+        document.getElementById(`tab-enroll-${unkId}`).classList.add('active');
+      } else {
+        buttons[2].classList.add('active');
+        document.getElementById(`tab-stranger-${unkId}`).classList.add('active');
+      }
+    }
+
+    async function checkAndMatchStudent(unkId) {
+      const regInput = document.getElementById(`reg-input-${unkId}`);
+      const regNo = regInput.value.trim();
+      const feedback = document.getElementById(`match-feedback-${unkId}`);
+      if (!regNo) {
+        feedback.innerHTML = '<span style="color:#f87171;">Please enter a Roll Number.</span>';
+        return;
+      }
+
+      feedback.innerHTML = '<span style="color:#38bdf8;">Checking database...</span>';
+
+      try {
+        const chkResp = await fetch(`/api/check_student?register_number=${encodeURIComponent(regNo)}`);
+        const chkData = await chkResp.json();
+
+        if (chkData.exists) {
+          const st = chkData.student;
+          feedback.innerHTML = `<span style="color:#34d399;">✓ Found: <b>${st.name}</b> (${st.department} - Year ${st.year}). Training model now...</span>`;
+
+          const resResp = await fetch('/api/resolve_unknown_face', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              unknown_id: unkId,
+              action: 'match_existing',
+              register_number: regNo,
+              resolved_by: 'staff'
+            })
+          });
+          const resData = await resResp.json();
+          if (resData.status === 'success') {
+            // Update unknown face record
+            const target = detectedUnknownFaces.find(u => u.id === unkId);
+            if (target) {
+              target.status = 'resolved';
+              target.resolved_name = st.name;
+              target.resolved_reg = st.register_number;
+            }
+
+            // Update recognizedStudents table
+            const existingStIdx = recognizedStudents.findIndex(s => s.register_number === st.register_number);
+            if (existingStIdx >= 0) {
+              recognizedStudents[existingStIdx].status = 'Present';
+            } else {
+              recognizedStudents.push({
+                id: st.id,
+                name: st.name,
+                register_number: st.register_number,
+                department: st.department,
+                year: st.year,
+                status: 'Present'
+              });
+            }
+
+            // Update unknown counter
+            const unkCnt = document.getElementById('cntUnknown');
+            unkCnt.innerText = Math.max(0, parseInt(unkCnt.innerText || 0) - 1);
+
+            renderResults();
+            renderUnknownFaces();
+          } else {
+            feedback.innerHTML = `<span style="color:#f87171;">Error: ${resData.message}</span>`;
+          }
+        } else {
+          feedback.innerHTML = `<span style="color:#fbbf24;">Student not found with Roll No "${regNo}". Click "Add as New Student" above to enroll them.</span>`;
+          // Pre-fill roll number in enroll tab
+          document.getElementById(`new-reg-${unkId}`).value = regNo;
+        }
+      } catch (err) {
+        feedback.innerHTML = `<span style="color:#f87171;">Verification failed: ${err}</span>`;
+      }
+    }
+
+    async function addNewStudentFromFace(unkId) {
+      const name = document.getElementById(`new-name-${unkId}`).value.trim();
+      const regNo = document.getElementById(`new-reg-${unkId}`).value.trim();
+      const dept = document.getElementById(`new-dept-${unkId}`).value;
+      const year = document.getElementById(`new-year-${unkId}`).value;
+
+      if (!name || !regNo) {
+        alert('Please fill both Student Name and Roll / Register Number.');
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/resolve_unknown_face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            unknown_id: unkId,
+            action: 'add_new',
+            name: name,
+            register_number: regNo,
+            department: dept,
+            year: year,
+            resolved_by: 'staff'
+          })
+        });
+        const data = await resp.json();
+        if (data.status === 'success') {
+          const target = detectedUnknownFaces.find(u => u.id === unkId);
+          if (target) {
+            target.status = 'resolved';
+            target.resolved_name = name;
+            target.resolved_reg = regNo;
+          }
+
+          recognizedStudents.push(data.student);
+
+          const unkCnt = document.getElementById('cntUnknown');
+          unkCnt.innerText = Math.max(0, parseInt(unkCnt.innerText || 0) - 1);
+
+          renderResults();
+          renderUnknownFaces();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Failed to register student: ' + err);
+      }
+    }
+
+    async function markAsStranger(unkId) {
+      const notes = document.getElementById(`stranger-notes-${unkId}`).value.trim();
+      try {
+        const resp = await fetch('/api/resolve_unknown_face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            unknown_id: unkId,
+            action: 'mark_stranger',
+            notes: notes,
+            resolved_by: 'staff'
+          })
+        });
+        const data = await resp.json();
+        if (data.status === 'success') {
+          const target = detectedUnknownFaces.find(u => u.id === unkId);
+          if (target) {
+            target.status = 'stranger';
+          }
+          const unkCnt = document.getElementById('cntUnknown');
+          unkCnt.innerText = Math.max(0, parseInt(unkCnt.innerText || 0) - 1);
+
+          renderUnknownFaces();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Failed to flag stranger: ' + err);
+      }
+    }
+
+    async function downloadAttendanceExcel() {
+      const dept = document.getElementById('department').value;
+      const yr = document.getElementById('year').value;
+      const subj = document.getElementById('subject').value;
+      const prd = document.getElementById('period').value;
+
+      const payload = {
+        department: dept,
+        year: yr,
+        subject: subj,
+        period: prd,
+        students: recognizedStudents
+      };
+
+      try {
+        const resp = await fetch('/api/download_attendance_excel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) {
+          alert('Failed to generate Excel file.');
+          return;
+        }
+
+        const disposition = resp.headers.get('Content-Disposition');
+        let filename = `Attendance_${dept}_Year${yr}_Period${prd}.xlsx`;
+        if (disposition && disposition.indexOf('filename=') !== -1) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Download error: ' + err);
+      }
+    }
+
+    async function confirmSaveAttendance() {
+      const payload = {
+        students: recognizedStudents,
+        subject: document.getElementById('subject').value,
+        period: document.getElementById('period').value
+      };
+      const resp = await fetch('/save_attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.status === 'success') {
+        if (confirm('Attendance committed to database successfully!\n\nWould you like to download the Excel report for this period now?')) {
+          await downloadAttendanceExcel();
+        }
+        window.location.reload();
+      } else {
+        alert('Failed to save: ' + data.message);
+      }
+    }
+  </script>
+</body>
+</html>

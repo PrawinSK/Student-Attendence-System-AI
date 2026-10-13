@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOD Admin Dashboard | Smart Attendance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 30px; }
+    .header { margin-bottom: 24px; border-bottom: 1px solid #1e293b; padding-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 26px; color: #38bdf8; margin: 0; }
+    .subtitle { color: #94a3b8; font-size: 14px; margin-top: 4px; }
+    .nav-btns a { color: #f8fafc; background: #1e293b; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 14px; border: 1px solid #334155; }
+    .nav-btns a:hover { background: #334155; }
+    .year-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .year-card { background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; text-align: center; }
+    .year-title { font-size: 16px; margin: 0 0 8px 0; color: #60a5fa; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #38bdf8; }
+    .stat-label { font-size: 12px; color: #94a3b8; }
+    .table-section { background: #1e293b; border-radius: 14px; padding: 22px; border: 1px solid #334155; margin-bottom: 28px; }
+    .table-section h2 { margin-top: 0; font-size: 18px; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #334155; vertical-align: middle; }
+    th { color: #94a3b8; font-weight: 600; font-size: 13px; }
+    .avatar-preview { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #475569; }
+    .crop-preview { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 2px solid #ef4444; cursor: pointer; transition: transform 0.2s; }
+    .crop-preview:hover { transform: scale(1.1); }
+    .badge-pending { background: #78350f; color: #fde68a; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge-resolved { background: #064e3b; color: #6ee7b7; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge-stranger { background: #7f1d1d; color: #fca5a5; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    
+    .btn-resolve { background: #2563eb; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-resolve:hover { background: #1d4ed8; }
+    .btn-delete { background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-delete:hover { background: #dc2626; color: #ffffff; }
+    .btn-view-annotated { background: #0f172a; color: #38bdf8; border: 1px solid #38bdf8; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn-view-annotated:hover { background: #38bdf8; color: #0f172a; }
+
+    /* Modal Styles */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+    .modal.show { display: flex; }
+    .modal-card { background: #1e293b; border: 1px solid #475569; border-radius: 14px; width: 100%; max-width: 520px; padding: 24px; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6); }
+    .modal-close { position: absolute; top: 16px; right: 20px; color: #94a3b8; font-size: 24px; font-weight: bold; cursor: pointer; }
+    .modal-close:hover { color: #fff; }
+    .modal-img-preview { max-width: 90%; max-height: 85%; border-radius: 8px; border: 2px solid #38bdf8; }
+
+    .stat-cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card-unk { background: #0f172a; border-radius: 10px; padding: 14px; border: 1px solid #334155; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>HOD Admin Dashboard</h1>
+      <div class="subtitle">Smart Facial Attendance • Student Roster & Unknown Face Incident Review</div>
+    </div>
+    <div class="nav-btns">
+      <a href="/">← Return to Attendance Portal</a>
+      <a href="/add_student">+ Register Student</a>
+    </div>
+  </div>
+
+  <!-- Demographics Summary -->
+  <div class="year-grid">
+    {% for dept, years in dept_stats.items() %}
+    <div class="year-card">
+      <div class="year-title">{{ dept }} Department</div>
+      <div class="stat-value">{{ dept_totals[dept] }}</div>
+      <div class="stat-label">Enrolled Students</div>
+      <div style="margin-top: 8px; font-size: 12px; color: #94a3b8;">
+        Y1: {{ years[1] }} | Y2: {{ years[2] }} | Y3: {{ years[3] }} | Y4: {{ years[4] }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- SECTION: Unknown Faces & Stranger Review Console -->
+  <div class="table-section" style="border: 1px solid #6366f1;">
+    <h2>
+      <span style="color:#a5b4fc;">🚨 Unknown Face Incident Review Console</span>
+      <span style="font-size:13px; font-weight:normal; color:#94a3b8;">Total Logged: {{ unk_stats.total }}</span>
+    </h2>
+
+    <div class="stat-cards-row">
+      <div class="stat-card-unk">
+        <div style="font-size:22px; font-weight:700; color:#e0e7ff;">{{ unk_stats.total }}</div>
+        <div style="font-size:12px; color:#94a3b8;">Total Detected</div>
+      </div>
+      <div class="stat-card-unk" style="border-color:#d97706;">
+        <div style="font-size:22px; font-weight:700; color:#fbbf24;">{{ unk_stats.pending }}</div>
+        <div style="font-size:12px; color:#94a3b8;">Pending Action</div>
+      </div>
+      <div class="stat-card-unk" style="border-color:#059669;">
+        <div style="font-size:22px; font-weight:700; color:#34d399;">{{ unk_stats.resolved }}</div>
+        <div style="font-size:12px; color:#94a3b8;">Auto-Trained & Linked</div>
+      </div>
+      <div class="stat-card-unk" style="border-color:#dc2626;">
+        <div style="font-size:22px; font-weight:700; color:#f87171;">{{ unk_stats.stranger }}</div>
+        <div style="font-size:12px; color:#94a3b8;">Flagged Strangers</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Face Crop</th>
+          <th>Session Details</th>
+          <th>Detection Time</th>
+          <th>Marked Class Photo</th>
+          <th>Status</th>
+          <th>Resolution Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in unknown_faces %}
+        <tr id="hod-row-{{ u.id }}">
+          <td>
+            <img src="/{{ u.crop_image_path }}" class="crop-preview" onclick="openImageModal('/{{ u.crop_image_path }}')" title="Click to enlarge">
+          </td>
+          <td>
+            <b>{{ u.department }} - Year {{ u.year }}</b><br>
+            <span style="font-size:12px; color:#94a3b8;">{{ u.subject or 'Class' }} (Period {{ u.period or 1 }})</span>
+          </td>
+          <td>
+            {{ u.date or '' }}<br>
+            <span style="font-size:11px; color:#64748b;">{{ u.created_at }}</span>
+          </td>
+          <td>
+            {% if u.annotated_image_path %}
+            <button class="btn-view-annotated" onclick="openImageModal('/{{ u.annotated_image_path }}')">👁 View Marked Photo</button>
+            {% else %}
+            <span style="color:#64748b; font-size:12px;">N/A</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.status == 'resolved' %}
+              <span class="badge-resolved">✓ Linked: {{ u.student_name or 'Student' }} ({{ u.student_reg or '' }})</span>
+            {% elif u.status == 'stranger' %}
+              <span class="badge-stranger">🚫 Stranger / Visitor</span>
+            {% else %}
+              <span class="badge-pending">🟡 Pending HOD Review</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.status == 'pending' %}
+            <button class="btn-resolve" onclick="openResolveModal({{ u.id }}, '{{ u.crop_image_path }}', '{{ u.department }}', {{ u.year }})">
+              Resolve Person
+            </button>
+            {% else %}
+            <span style="font-size:12px; color:#94a3b8;">Completed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not unknown_faces %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">
+            No unknown individuals recorded yet. When an unidentified face appears in attendance photos, it will automatically show here!
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION: Registered Students Database -->
+  <div class="table-section">
+    <h2>Registered Student Database & Reference Encodings</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Reg Number</th>
+          <th>Full Name</th>
+          <th>Department</th>
+          <th>Year</th>
+          <th>Facial Encoding Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in all_students %}
+        <tr id="student-row-{{ s.id }}">
+          <td>
+            <img src="/{{ s.image_path }}" class="avatar-preview" onerror="this.src='https://via.placeholder.com/40?text=Face'">
+          </td>
+          <td><b>{{ s.register_number }}</b></td>
+          <td>{{ s.name }}</td>
+          <td>{{ s.department }}</td>
+          <td>Year {{ s.year }}</td>
+          <td><span style="color:#10b981; font-weight:600;">Enrolled & Encoded</span></td>
+          <td>
+            <button class="btn-delete" onclick="confirmDeleteStudent({{ s.id }}, '{{ s.name }}', '{{ s.register_number }}')">
+              🗑 Delete
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not all_students %}
+        <tr>
+          <td colspan="7" style="text-align:center; color:#94a3b8;">No students registered yet. Click "+ Register Student" above to enroll.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION: Period Attendance Log & Instant Excel Export -->
+  <div class="table-section" style="border: 1px solid #0284c7;">
+    <h2>
+      <span style="color:#38bdf8;">📊 Period Attendance Log & Instant Excel Export</span>
+      <span style="font-size:13px; font-weight:normal; color:#94a3b8;">Recorded Sessions: {{ recent_sessions|length }}</span>
+    </h2>
+
+    <!-- Quick Export Bar -->
+    <div style="background:#0f172a; padding:14px; border-radius:10px; border:1px solid #334155; margin-bottom:18px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+      <div style="flex:1; min-width:140px;">
+        <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Department</label>
+        <select id="hodExpDept" style="padding:8px; border-radius:6px; background:#1e293b; color:#fff; border:1px solid #334155; width:100%;">
+          <option value="CS">CS</option>
+          <option value="IT" selected>IT</option>
+          <option value="EEE">EEE</option>
+          <option value="MECH">MECH</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:100px;">
+        <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Year</label>
+        <select id="hodExpYear" style="padding:8px; border-radius:6px; background:#1e293b; color:#fff; border:1px solid #334155; width:100%;">
+          <option value="1">Year 1</option>
+          <option value="2">Year 2</option>
+          <option value="3">Year 3</option>
+          <option value="4" selected>Year 4</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Subject</label>
+        <input type="text" id="hodExpSubj" value="Data Structures" style="padding:8px; border-radius:6px; background:#1e293b; color:#fff; border:1px solid #334155; width:100%; box-sizing:border-box;">
+      </div>
+      <div style="flex:1; min-width:100px;">
+        <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Period</label>
+        <select id="hodExpPeriod" style="padding:8px; border-radius:6px; background:#1e293b; color:#fff; border:1px solid #334155; width:100%;">
+          <option value="1">Period 1</option>
+          <option value="2">Period 2</option>
+          <option value="3" selected>Period 3</option>
+          <option value="4">Period 4</option>
+          <option value="5">Period 5</option>
+          <option value="6">Period 6</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Date</label>
+        <input type="date" id="hodExpDate" style="padding:8px; border-radius:6px; background:#1e293b; color:#fff; border:1px solid #334155; width:100%; box-sizing:border-box;">
+      </div>
+      <div style="padding-top:16px;">
+        <button class="btn-resolve" style="background:#0284c7; padding:9px 18px; font-size:13px;" onclick="hodQuickExportExcel()">
+          📥 Export to Excel (.xlsx)
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Sessions Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Class Cohort</th>
+          <th>Subject</th>
+          <th>Period</th>
+          <th>Attendance Rate</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in recent_sessions %}
+        <tr>
+          <td><b>{{ s.date }}</b></td>
+          <td>{{ s.department }} - Year {{ s.year }}</td>
+          <td>{{ s.subject }}</td>
+          <td>Period {{ s.period }}</td>
+          <td>
+            <span class="badge-resolved">{{ s.present_count }} / {{ s.total_students }} Present</span>
+          </td>
+          <td>
+            <a href="/api/download_attendance_excel?department={{ s.department }}&year={{ s.year }}&subject={{ s.subject }}&period={{ s.period }}&date={{ s.date }}"
+               class="btn-view-annotated" style="color:#38bdf8; border-color:#38bdf8;" download>
+              📥 Download Excel (.xlsx)
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not recent_sessions %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">
+            No period attendance records saved yet. Take attendance in the portal to generate reports.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Resolution Action Modal for HOD -->
+  <div id="resolveModal" class="modal">
+    <div class="modal-card">
+      <span class="modal-close" onclick="closeResolveModal()">&times;</span>
+      <h3 style="margin-top:0; color:#38bdf8;">Resolve Unknown Individual</h3>
+      
+      <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px; background:#0f172a; padding:12px; border-radius:8px;">
+        <img id="resFaceImg" src="" style="width:64px; height:64px; border-radius:8px; border:2px solid #ef4444; object-fit:cover;">
+        <div>
+          <div style="font-size:14px; font-weight:600; color:#f8fafc;">Unidentified Person</div>
+          <div id="resCohortInfo" style="font-size:12px; color:#94a3b8;">Department & Year</div>
+        </div>
+      </div>
+
+      <!-- Action Choice Tabs -->
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button id="resTabMatchBtn" class="btn-resolve" style="background:#2563eb;" onclick="setResTab('match')">1. Match Roll No</button>
+        <button id="resTabAddBtn" class="btn-resolve" style="background:#1e293b; color:#94a3b8;" onclick="setResTab('add')">2. Add New Student</button>
+        <button id="resTabStrangerBtn" class="btn-resolve" style="background:#1e293b; color:#94a3b8;" onclick="setResTab('stranger')">3. Mark Stranger</button>
+      </div>
+
+      <!-- Sub-panel 1: Match Existing -->
+      <div id="resPanelMatch">
+        <label style="font-size:13px; color:#94a3b8; display:block; margin-bottom:6px;">Enter Student Roll / Register Number:</label>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input type="text" id="resRegInput" style="flex:1; padding:10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff;" placeholder="e.g. 11224001">
+          <button class="btn-resolve" onclick="hodVerifyAndLink()">Verify & Auto-Train</button>
+        </div>
+        <div id="resMatchFeedback" style="font-size:12px; min-height:20px;"></div>
+      </div>
+
+      <!-- Sub-panel 2: Add New -->
+      <div id="resPanelAdd" style="display:none;">
+        <label style="font-size:13px; color:#94a3b8; display:block; margin-bottom:6px;">Student Full Name:</label>
+        <input type="text" id="resNewName" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; margin-bottom:10px;" placeholder="Full Name">
+        <label style="font-size:13px; color:#94a3b8; display:block; margin-bottom:6px;">Register / Roll Number:</label>
+        <input type="text" id="resNewReg" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; margin-bottom:12px;" placeholder="e.g. 11224005">
+        <button class="btn-resolve" style="background:#059669; width:100%; padding:10px;" onclick="hodAddNewStudent()">+ Register Student & Auto-Train Face</button>
+      </div>
+
+      <!-- Sub-panel 3: Mark Stranger -->
+      <div id="resPanelStranger" style="display:none;">
+        <p style="font-size:13px; color:#cbd5e1; margin-top:0;">Mark this person as a visitor, guest, or unauthorized intruder in class.</p>
+        <input type="text" id="resStrangerNotes" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; margin-bottom:12px;" placeholder="Optional notes (e.g. Visitor, Guest, Outsider)">
+        <button class="btn-resolve" style="background:#dc2626; width:100%; padding:10px;" onclick="hodMarkStranger()">🚫 Mark as Stranger / Visitor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Modal -->
+  <div id="imageModal" class="modal" onclick="closeImageModal()">
+    <span class="modal-close" style="top:20px; right:30px; font-size:36px;">&times;</span>
+    <img id="imageModalImg" class="modal-img-preview" src="" alt="Enlarged Image">
+  </div>
+
+  <script>
+    let activeUnknownId = null;
+    let activeDept = 'CS';
+    let activeYear = 1;
+
+    function openImageModal(src) {
+      document.getElementById('imageModalImg').src = src;
+      document.getElementById('imageModal').classList.add('show');
+    }
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.remove('show');
+    }
+
+    function openResolveModal(unkId, cropPath, dept, year) {
+      activeUnknownId = unkId;
+      activeDept = dept;
+      activeYear = year;
+      document.getElementById('resFaceImg').src = '/' + cropPath;
+      document.getElementById('resCohortInfo').innerText = `${dept} Department - Year ${year}`;
+      document.getElementById('resRegInput').value = '';
+      document.getElementById('resMatchFeedback').innerHTML = '';
+      setResTab('match');
+      document.getElementById('resolveModal').classList.add('show');
+    }
+
+    function closeResolveModal() {
+      document.getElementById('resolveModal').classList.remove('show');
+    }
+
+    function setResTab(tab) {
+      const matchBtn = document.getElementById('resTabMatchBtn');
+      const addBtn = document.getElementById('resTabAddBtn');
+      const strangerBtn = document.getElementById('resTabStrangerBtn');
+
+      const pMatch = document.getElementById('resPanelMatch');
+      const pAdd = document.getElementById('resPanelAdd');
+      const pStranger = document.getElementById('resPanelStranger');
+
+      matchBtn.style.background = tab === 'match' ? '#2563eb' : '#1e293b';
+      matchBtn.style.color = tab === 'match' ? '#fff' : '#94a3b8';
+      addBtn.style.background = tab === 'add' ? '#059669' : '#1e293b';
+      addBtn.style.color = tab === 'add' ? '#fff' : '#94a3b8';
+      strangerBtn.style.background = tab === 'stranger' ? '#dc2626' : '#1e293b';
+      strangerBtn.style.color = tab === 'stranger' ? '#fff' : '#94a3b8';
+
+      pMatch.style.display = tab === 'match' ? 'block' : 'none';
+      pAdd.style.display = tab === 'add' ? 'block' : 'none';
+      pStranger.style.display = tab === 'stranger' ? 'block' : 'none';
+    }
+
+    async function hodVerifyAndLink() {
+      const regNo = document.getElementById('resRegInput').value.trim();
+      const fb = document.getElementById('resMatchFeedback');
+      if (!regNo) {
+        fb.innerHTML = '<span style="color:#f87171;">Enter a Roll Number.</span>';
+        return;
+      }
+      fb.innerHTML = '<span style="color:#38bdf8;">Checking student...</span>';
+
+      try {
+        const chkResp = await fetch(`/api/check_student?register_number=${encodeURIComponent(regNo)}`);
+        const chkData = await chkResp.json();
+
+        if (chkData.exists) {
+          const st = chkData.student;
+          fb.innerHTML = `<span style="color:#34d399;">✓ Student Found: ${st.name}. Auto-training model...</span>`;
+
+          const resResp = await fetch('/api/resolve_unknown_face', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              unknown_id: activeUnknownId,
+              action: 'match_existing',
+              register_number: regNo,
+              resolved_by: 'hod'
+            })
+          });
+          const resData = await resResp.json();
+          if (resData.status === 'success') {
+            alert(resData.message);
+            window.location.reload();
+          } else {
+            fb.innerHTML = `<span style="color:#f87171;">Error: ${resData.message}</span>`;
+          }
+        } else {
+          fb.innerHTML = `<span style="color:#fbbf24;">Roll No "${regNo}" not found. Switch to "2. Add New Student" tab to register them.</span>`;
+          document.getElementById('resNewReg').value = regNo;
+        }
+      } catch (err) {
+        fb.innerHTML = `<span style="color:#f87171;">Error: ${err}</span>`;
+      }
+    }
+
+    async function hodAddNewStudent() {
+      const name = document.getElementById('resNewName').value.trim();
+      const regNo = document.getElementById('resNewReg').value.trim();
+
+      if (!name || !regNo) {
+        alert('Please fill both Student Name and Roll Number.');
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/resolve_unknown_face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            unknown_id: activeUnknownId,
+            action: 'add_new',
+            name: name,
+            register_number: regNo,
+            department: activeDept,
+            year: activeYear,
+            resolved_by: 'hod'
+          })
+        });
+        const data = await resp.json();
+        if (data.status === 'success') {
+          alert(data.message);
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Failed: ' + err);
+      }
+    }
+
+    async function hodMarkStranger() {
+      const notes = document.getElementById('resStrangerNotes').value.trim();
+      try {
+        const resp = await fetch('/api/resolve_unknown_face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            unknown_id: activeUnknownId,
+            action: 'mark_stranger',
+            notes: notes,
+            resolved_by: 'hod'
+          })
+        });
+        const data = await resp.json();
+        if (data.status === 'success') {
+          alert(data.message);
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Failed: ' + err);
+      }
+    }
+
+    async function confirmDeleteStudent(sId, name, regNo) {
+      if (!confirm(`Are you sure you want to permanently delete student:\n\n• ${name} (${regNo})\n\nThis will remove their profile, enrolled facial encodings, and attendance records from the database.`)) {
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/delete_student', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ student_id: sId })
+        });
+        const data = await resp.json();
+        if (data.status === 'success') {
+          alert(data.message);
+          window.location.reload();
+        } else {
+          alert('Error deleting student: ' + data.message);
+        }
+      } catch (err) {
+        alert('Delete request failed: ' + err);
+      }
+    }
+
+    function hodQuickExportExcel() {
+      const dept = document.getElementById('hodExpDept').value;
+      const yr = document.getElementById('hodExpYear').value;
+      const subj = encodeURIComponent(document.getElementById('hodExpSubj').value.trim());
+      const prd = document.getElementById('hodExpPeriod').value;
+      const dt = document.getElementById('hodExpDate').value;
+
+      let url = `/api/download_attendance_excel?department=${dept}&year=${yr}&subject=${subj}&period=${prd}`;
+      if (dt) url += `&date=${dt}`;
+      window.location.href = url;
+    }
+
+    // Set today's date in quick export input
+    window.addEventListener('DOMContentLoaded', () => {
+      const dateInput = document.getElementById('hodExpDate');
+      if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+      }
+    });
+  </script>
+</body>
+</html>
