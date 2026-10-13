@@ -1024,8 +1024,11 @@ def hod_dashboard():
                            unk_stats=unk_stats,
                            recent_sessions=recent_sessions)
 
+# Auto-initialize database schema on startup for both Gunicorn and direct run
+init_db()
+
 if __name__ == '__main__':
-    init_db()
-    print("Starting Flask AI Attendance Server on http://127.0.0.1:5000")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting Flask AI Attendance Server on http://0.0.0.0:{port}")
+    app.run(host='0.0.0.0', port=port, debug=False)
 

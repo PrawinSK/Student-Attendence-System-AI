@@ -1,5 +1,7 @@
 # AI-Based Smart Attendance System
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/PrawinSK/Student-Attendence-System-AI)
+
 An intelligent, computer-vision-powered attendance tracking platform built with **OpenCV (YuNet + SFace)**, **Flask**, and **SQLite**. The system performs fast and accurate facial detection and recognition on group classroom images, automatically logs unknown persons for verification, supports instant model training from newly identified photos, and exports period attendance reports directly to styled Excel spreadsheets.
 
 ---

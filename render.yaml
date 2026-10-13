@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: student-attendance-system-ai
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt && python download_models.py
+    startCommand: gunicorn app:app -b 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
